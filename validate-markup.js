@@ -11,10 +11,10 @@ console.log(`Validating ${outputFile}...`);
 (async () => {
 	await sh(`yarn global add vnu-jar --silent`, "silent");
 	const nodePath = await sh(`yarn global dir`, "silent");
-	const vnuJar = await sh(
-		`NODE_PATH="${nodePath}/node_modules/" node -p "require('vnu-jar')"`,
-		"silent",
-	);
+	const vnuJar = await sh(`node -p "require('vnu-jar')"`, {
+		output: "silent",
+		env: { NODE_PATH: `${nodePath}/node_modules/` },
+	});
 
 	try {
 		const cmd = `java -jar "${vnuJar}" --also-check-css "${outputFile}"`;

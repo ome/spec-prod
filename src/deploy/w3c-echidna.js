@@ -1,5 +1,5 @@
 // @ts-check
-const { env, exit, pprint, request } = require("./utils.js");
+const { env, exit, pprint, request } = require("../utils.js");
 
 const MAILING_LIST = `https://lists.w3.org/Archives/Public/public-tr-notifications/`;
 const API_URL = "https://labs.w3.org/echidna/api/request";
@@ -7,7 +7,7 @@ const API_URL = "https://labs.w3.org/echidna/api/request";
 main().catch(error => exit(error));
 
 async function main() {
-	/** @type {import("./prepare.js").W3CDeployOptions} */
+	/** @type {import("../prepare.js").W3CDeployOptions} */
 	const inputs = JSON.parse(env("INPUTS_DEPLOY"));
 	if (inputs === false) {
 		exit("Skipped.", 0);

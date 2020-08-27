@@ -1,5 +1,5 @@
 // @ts-check
-const { env, exit, sh, yesOrNo } = require("./utils.js");
+const { env, exit, sh, yesOrNo } = require("../utils.js");
 
 if (yesOrNo(env("INPUTS_VALIDATE_MARKUP")) === false) {
 	exit("Skipped", 0);

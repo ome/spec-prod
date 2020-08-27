@@ -2,9 +2,9 @@
 const path = require("path");
 const os = require("os");
 const fs = require("fs").promises;
-const { env, exit, sh } = require("./utils.js");
+const { env, exit, sh } = require("../utils.js");
 
-/** @type {import("./prepare.js").GithubPagesDeployOptions} */
+/** @type {import("../prepare.js").GithubPagesDeployOptions} */
 const inputs = JSON.parse(env("INPUTS_DEPLOY"));
 const outputFile = env("OUTPUT_FILE");
 

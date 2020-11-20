@@ -4,24 +4,10 @@ const { env, exit, setOutput, sh } = require("./utils.js");
 const toolchain = env("INPUTS_TOOLCHAIN");
 const source = env("INPUTS_SOURCE");
 
-// Please do not rely on this value. If you would like this to be available as
-// an action output, file an issue.
-const outputFile = source + ".built.html";
-
 (async () => {
-	switch (toolchain) {
-		case "respec":
-			console.log(`Converting ReSpec document '${source}' to HTML...`);
-			return await sh(
-				`respec -s "${source}" -o "${outputFile}" --verbose --timeout 20`,
-				"stream",
-			);
-		case "bikeshed":
-			console.log(`Converting Bikeshed document '${source}' to HTML...`);
-			return await sh(`bikeshed spec "${source}" "${outputFile}"`, "stream");
-		default:
-			throw new Error(`Unknown "TOOLCHAIN": "${toolchain}"`);
-	}
+	console.log(`Converting Bikeshed document '${source}' to HTML...`);
+	await sh(`bikeshed spec "latest/${source}" "latest/index.out.html"`, "stream");
+	console.log(`Converting Bikeshed document '${source}' to HTML...`);
+	await sh(`bikeshed spec "0.1/${source}" "0.1/index.out.html"`, "stream");
 })()
-	.then(() => setOutput("output", outputFile))
 	.catch(err => exit(err.message || "Failed", err.code));

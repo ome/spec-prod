@@ -6,7 +6,6 @@ const { env, exit, sh } = require("./utils.js");
 
 /** @type {import("./prepare.js").GithubPagesDeployOptions} */
 const inputs = JSON.parse(env("INPUTS_DEPLOY"));
-const outputFile = env("OUTPUT_FILE");
 
 if (inputs === false) {
 	exit("Skipped.", 0);
@@ -19,13 +18,21 @@ main().catch(error => exit(error));
 
 async function main() {
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "spec-prod-output-"));
-	const tmpOutputFile = path.join(tmpDir, outputFile);
+	const latestDir = await fs.mkdtemp(path.join(tmpDir, "latest"));
+	const latestOut = path.join(latestDir, "index.out.html");
+	const v01Dir = await fs.mkdtemp(path.join(tmpDir, "0.1"));
+	const v01Out = path.join(v01Dir, "index.out.html");
 	let error = null;
 	try {
-		await prepare(tmpOutputFile);
+		await fs.rename("latest/index.out.html", latestOut);
+		await fs.rename("0.1/index.out.html", v01Out);
+		await prepare();
+		await fs.copyFile(latestOut, "latest/index.html");
+		await fs.copyFile(v01Out, "0.1/index.html");
 		const committed = await commit();
 		if (!committed) {
-			await cleanUp(tmpOutputFile);
+			await cleanUp(latestOut, "latest/index.out.html", "latest/index.html");
+			await cleanUp(v01Out, "0.1/index.out.html", "0.1/index.html");
 			exit(`Nothing to commit. Skipping deploy.`, 0);
 		}
 		await push();
@@ -33,7 +40,8 @@ async function main() {
 		console.log(err);
 		error = err;
 	} finally {
-		await cleanUp(tmpOutputFile);
+		await cleanUp(latestOut, "latest/index.out.html", "latest/index.html");
+		await cleanUp(v01Out, "0.1/index.out.html", "0.1/index.html");
 		if (error) {
 			console.log();
 			console.log("=".repeat(60));
@@ -45,9 +53,7 @@ async function main() {
 /**
  * @param {string} tmpOutputFile
  */
-async function prepare(tmpOutputFile) {
-	// Temporarily move built file as we'll be doing a checkout soon.
-	await fs.rename(outputFile, tmpOutputFile);
+async function prepare() {
 
 	// Clean up working tree
 	await sh(`git checkout -- .`);
@@ -61,9 +67,6 @@ async function prepare(tmpOutputFile) {
 	} else {
 		await sh(`git checkout --orphan "${targetBranch}"`, "stream");
 	}
-
-	// Bring back the changed file. We'll be serving it as index.html
-	await fs.copyFile(tmpOutputFile, "index.html");
 }
 
 async function commit() {
@@ -108,9 +111,9 @@ async function push() {
 /**
  * @param {string} tmpOutputFile
  */
-async function cleanUp(tmpOutputFile) {
+async function cleanUp(tmpOutputFile, outputFile, targetFile) {
 	try {
-		await fs.unlink("index.html");
+		await fs.unlink(targetFile);
 	} catch {}
 
 	try {

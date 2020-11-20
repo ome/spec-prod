@@ -76,49 +76,9 @@ function toolchainAndSource(inputs) {
 	let toolchain = inputs.TOOLCHAIN;
 	let source = inputs.SOURCE;
 
-	if (toolchain) {
-		switch (toolchain) {
-			case "respec":
-				source = source || "index.html";
-				break;
-			case "bikeshed":
-				source = source || "index.bs";
-				break;
-			default:
-				exit(`Invalid input "TOOLCHAIN": ${toolchain}`);
-		}
-	}
-
-	if (!source) {
-		if (existsSync("index.bs")) {
-			source = "index.bs";
-		} else if (existsSync("index.html")) {
-			source = "index.html";
-		}
-	}
-
-	if (!toolchain && !source) {
-		exit(`Either of "TOOLCHAIN" or "SOURCE" must be provided.`);
-	}
-
-	if (!existsSync(source)) {
-		exit(`"SOURCE" file "${source}" not found.`);
-	}
-
-	if (!toolchain) {
-		switch (source) {
-			case "index.html":
-				toolchain = "respec";
-				break;
-			case "index.bs":
-				toolchain = "bikeshed";
-				break;
-			default:
-				exit(
-					`Failed to figure out "TOOLCHAIN" from "SOURCE". Please specify the "TOOLCHAIN".`,
-				);
-		}
-	}
+    // HARD-CODING
+    toolchain = "bikeshed";
+    source = "index.bs";
 
 	return { toolchain, source };
 }

@@ -27,6 +27,11 @@ async function main() {
 		await fs.rename("latest/index.out.html", latestOut);
 		await fs.rename("0.1/index.out.html", v01Out);
 		await prepare();
+
+        // Create in case previously empty
+        await fs.mkdir("latest", { recursive: true });
+        await fs.mkdir("0.1", { recursive: true });
+
 		await fs.copyFile(latestOut, "latest/index.html");
 		await fs.copyFile(v01Out, "0.1/index.html");
 		const committed = await commit();

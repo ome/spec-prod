@@ -20,6 +20,8 @@ async function main() {
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "spec-prod-output-"));
 	const latestDir = await fs.mkdtemp(path.join(tmpDir, "latest"));
 	const latestOut = path.join(latestDir, "index.out.html");
+	const v03Dir = await fs.mkdtemp(path.join(tmpDir, "0.3"));
+	const v03Out = path.join(v03Dir, "index.out.html");
 	const v02Dir = await fs.mkdtemp(path.join(tmpDir, "0.2"));
 	const v02Out = path.join(v02Dir, "index.out.html");
 	const v01Dir = await fs.mkdtemp(path.join(tmpDir, "0.1"));
@@ -27,21 +29,25 @@ async function main() {
 	let error = null;
 	try {
 		await fs.rename("latest/index.out.html", latestOut);
+		await fs.rename("0.3/index.out.html", v03Out);
 		await fs.rename("0.2/index.out.html", v02Out);
 		await fs.rename("0.1/index.out.html", v01Out);
 		await prepare();
 
         // Create in case previously empty
         await fs.mkdir("latest", { recursive: true });
+        await fs.mkdir("0.3", { recursive: true });
         await fs.mkdir("0.2", { recursive: true });
         await fs.mkdir("0.1", { recursive: true });
 
 		await fs.copyFile(latestOut, "latest/index.html");
+		await fs.copyFile(v03Out, "0.3/index.html");
 		await fs.copyFile(v02Out, "0.2/index.html");
 		await fs.copyFile(v01Out, "0.1/index.html");
 		const committed = await commit();
 		if (!committed) {
 			await cleanUp(latestOut, "latest/index.out.html", "latest/index.html");
+			await cleanUp(v03Out, "0.3/index.out.html", "0.3/index.html");
 			await cleanUp(v02Out, "0.2/index.out.html", "0.2/index.html");
 			await cleanUp(v01Out, "0.1/index.out.html", "0.1/index.html");
 			exit(`Nothing to commit. Skipping deploy.`, 0);
@@ -52,6 +58,7 @@ async function main() {
 		error = err;
 	} finally {
 		await cleanUp(latestOut, "latest/index.out.html", "latest/index.html");
+		await cleanUp(v03Out, "0.3/index.out.html", "0.3/index.html");
 		await cleanUp(v02Out, "0.2/index.out.html", "0.2/index.html");
 		await cleanUp(v01Out, "0.1/index.out.html", "0.1/index.html");
 		if (error) {

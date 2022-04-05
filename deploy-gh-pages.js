@@ -17,45 +17,30 @@ const { targetBranch, token, event, sha, repository, actor } = inputs;
 main().catch(error => exit(error));
 
 async function main() {
+	const versions = ["latest", "0.4", "0.3", "0.2", "0.1"]
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "spec-prod-output-"));
-	const latestDir = await fs.mkdtemp(path.join(tmpDir, "latest"));
-	const latestOut = path.join(latestDir, "index.out.html");
-	const v04Dir = await fs.mkdtemp(path.join(tmpDir, "0.4"));
-	const v04Out = path.join(v04Dir, "index.out.html");
-	const v03Dir = await fs.mkdtemp(path.join(tmpDir, "0.3"));
-	const v03Out = path.join(v03Dir, "index.out.html");
-	const v02Dir = await fs.mkdtemp(path.join(tmpDir, "0.2"));
-	const v02Out = path.join(v02Dir, "index.out.html");
-	const v01Dir = await fs.mkdtemp(path.join(tmpDir, "0.1"));
-	const v01Out = path.join(v01Dir, "index.out.html");
 	let error = null;
 	try {
-		await fs.rename("latest/index.out.html", latestOut);
-		await fs.rename("0.4/index.out.html", v04Out);
-		await fs.rename("0.3/index.out.html", v03Out);
-		await fs.rename("0.2/index.out.html", v02Out);
-		await fs.rename("0.1/index.out.html", v01Out);
+		for (const version of versions) {
+			await fs.mkdir(path.join(tmpDir, version));
+			await fs.rename(path.join(version, "index.out.html"), path.join(tmpDir, version, "index.out.html"));
+		}
 		await prepare();
 
-        // Create in case previously empty
-        await fs.mkdir("latest", { recursive: true });
-        await fs.mkdir("0.4", { recursive: true });
-        await fs.mkdir("0.3", { recursive: true });
-        await fs.mkdir("0.2", { recursive: true });
-        await fs.mkdir("0.1", { recursive: true });
+		for (const version of versions) {
+		// Create in case previously empty
+			await fs.mkdir(version, { recursive: true });
 
-		await fs.copyFile(latestOut, "latest/index.html");
-		await fs.copyFile(v04Out, "0.4/index.html");
-		await fs.copyFile(v03Out, "0.3/index.html");
-		await fs.copyFile(v02Out, "0.2/index.html");
-		await fs.copyFile(v01Out, "0.1/index.html");
+			await fs.copyFile(path.join(tmpDir, version, "index.out.html"), path.join(version, "index.html"));
+		}
 		const committed = await commit();
 		if (!committed) {
-			await cleanUp(latestOut, "latest/index.out.html", "latest/index.html");
-			await cleanUp(v04Out, "0.4/index.out.html", "0.4/index.html");
-			await cleanUp(v03Out, "0.3/index.out.html", "0.3/index.html");
-			await cleanUp(v02Out, "0.2/index.out.html", "0.2/index.html");
-			await cleanUp(v01Out, "0.1/index.out.html", "0.1/index.html");
+			for (const version of versions) {
+				await cleanUp(
+					path.join(tmpDir, version, "index.out.html"),
+					path.join(version, "index.out.html"),
+					path.join(version, "index.html"));
+			}
 			exit(`Nothing to commit. Skipping deploy.`, 0);
 		}
 		await push();
@@ -63,11 +48,12 @@ async function main() {
 		console.log(err);
 		error = err;
 	} finally {
-		await cleanUp(latestOut, "latest/index.out.html", "latest/index.html");
-		await cleanUp(v04Out, "0.4/index.out.html", "0.4/index.html");
-		await cleanUp(v03Out, "0.3/index.out.html", "0.3/index.html");
-		await cleanUp(v02Out, "0.2/index.out.html", "0.2/index.html");
-		await cleanUp(v01Out, "0.1/index.out.html", "0.1/index.html");
+		for (const version of versions) {
+			await cleanUp(
+				path.join(tmpDir, version, "index.out.html"),
+				path.join(version, "index.out.html"),
+				path.join(version, "index.html"));
+		}
 		if (error) {
 			console.log();
 			console.log("=".repeat(60));

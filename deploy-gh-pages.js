@@ -18,26 +18,51 @@ main().catch(error => exit(error));
 
 async function main() {
 	const versions = ["latest", "0.4", "0.3", "0.2", "0.1"]
+	const schemas = ["image.schema", "strict_image.schema"]
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "spec-prod-output-"));
 	let error = null;
 	try {
 		for (const version of versions) {
-			await fs.mkdir(path.join(tmpDir, version));
-			await fs.rename(path.join(version, "index.out.html"), path.join(tmpDir, version, "index.out.html"));
+			await fs.mkdir(path.join(tmpDir, version, "schemas"), { recursive: true });
+			await fs.rename(path.join(version, "index.out.html"), path.join(tmpDir, version, "index.html"));
+			for (const schema of schemas) {
+				try {
+					await fs.rename(
+						path.join(version, "schemas", schema),
+						path.join(tmpDir, version, "schemas", schema));
+				} catch (error) {
+					if (error.code === "ENOENT") {
+						console.log('No %s found for %s', schema, version);
+					} else {
+						console.log(error);
+					}
+				}
+			}
 		}
 		await prepare();
 
 		for (const version of versions) {
 		// Create in case previously empty
-			await fs.mkdir(version, { recursive: true });
-
-			await fs.copyFile(path.join(tmpDir, version, "index.out.html"), path.join(version, "index.html"));
+			await fs.mkdir(path.join(version, "schemas"), { recursive: true });
+			await fs.rename(
+				path.join(tmpDir, version, "index.html"),
+				path.join(version, "index.html"));
+			for (const schema of schemas) {
+				try {
+					await fs.rename(
+						path.join(tmpDir, version, "schemas", schema),
+						path.join(version, "schemas", schema));
+					console.info("Copied %s/schemas/%s", version, schema);
+				} catch (error) {
+					console.log(error);
+				}
+			}
 		}
 		const committed = await commit();
 		if (!committed) {
 			for (const version of versions) {
 				await cleanUp(
-					path.join(tmpDir, version, "index.out.html"),
+					path.join(tmpDir, version),
 					path.join(version, "index.out.html"),
 					path.join(version, "index.html"));
 			}
@@ -50,7 +75,7 @@ async function main() {
 	} finally {
 		for (const version of versions) {
 			await cleanUp(
-				path.join(tmpDir, version, "index.out.html"),
+				path.join(tmpDir, version),
 				path.join(version, "index.out.html"),
 				path.join(version, "index.html"));
 		}

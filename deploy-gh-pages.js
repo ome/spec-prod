@@ -18,7 +18,7 @@ main().catch(error => exit(error));
 
 async function main() {
 	const versions = ["latest", "0.4", "0.3", "0.2", "0.1"]
-	const schemas = ["image.schema", "strict_image.schema", "plate.schema", "strict_plate.schema", "well.schema", "strict_well.schema"]
+	const schemas = ["image.schema", "strict_image.schema", "label.schema", "strict_label.schema", "plate.schema", "strict_plate.schema", "well.schema", "strict_well.schema"]
 	const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "spec-prod-output-"));
 	let error = null;
 	try {
